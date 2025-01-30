@@ -5,10 +5,13 @@ import torch.nn as nn
 from torchvision import models
 import torch.nn.functional as F
 
+
+# dumb down veriosn froom tamming-trasnformers
+
 class VGGPerceptualLoss(nn.Module):
     def __init__(self, resize=True):
         super().__init__()
-        # Use VGG16 loaded from pretrained weights
+    
         vgg = models.vgg16(pretrained=True)
         blocks = []
         blocks.append(vgg.features[:4].eval())
@@ -66,15 +69,15 @@ class VQLPIPSWithDiscriminator(nn.Module):
 
     def forward(self, codebook_loss, inputs, reconstructions, g_loss, d_loss, 
                 optimizer_idx, global_step, last_layer=None):
-        # Reconstruction loss
-        rec_loss = torch.abs(inputs - reconstructions).mean()  # Aggregate to scalar
+        # origially this was not used in tamming transformers
+        rec_loss = torch.abs(inputs - reconstructions).mean()  
         if self.perceptual_weight > 0:
             p_loss = self.perceptual_loss(inputs, reconstructions)
             rec_loss = rec_loss + self.perceptual_weight * p_loss  # Both are scalars
 
-        # Generator loss
+
         if optimizer_idx == 0:
-            # After disc_start steps, add GAN loss
+            # disc start is the criminal here, this needs to be fixed, corroupting genrator loss
             if global_step >= self.disc_start:
                 loss = (rec_loss + 
                        self.codebook_weight * codebook_loss + 
@@ -84,24 +87,24 @@ class VQLPIPSWithDiscriminator(nn.Module):
                 g_loss = torch.tensor(0.0, device=rec_loss.device)
 
             log = {
-                "total_loss": loss,             # Scalar
-                "rec_loss": rec_loss,           # Scalar
-                "g_loss": g_loss,               # Scalar
-                "codebook_loss": codebook_loss, # Scalar
+                "total_loss": loss,             # this is different from tamming transformers, this is scalar
+                "rec_loss": rec_loss,           
+                "g_loss": g_loss,              
+                "codebook_loss": codebook_loss, 
             }
             return loss, log
 
-        # Discriminator loss
+        
         if optimizer_idx == 1:
             if global_step >= self.disc_start:
                 log = {
-                    "d_loss": d_loss,  # Scalar
+                    "d_loss": d_loss, 
                 }
                 return d_loss, log
             else:
                 # No discriminator training before disc_start steps
                 d_loss = torch.tensor(0.0, device=rec_loss.device)
                 log = {
-                    "d_loss": d_loss,  # Scalar
+                    "d_loss": d_loss,  
                 }
                 return d_loss, log

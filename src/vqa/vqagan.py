@@ -6,6 +6,10 @@ from .quantize import VectorQuantizer
 from .discriminator import NLayerDiscriminator, weights_init
 from .perceptual import VQLPIPSWithDiscriminator
 
+
+# test vqa model, poor reconstruction, issue with loss
+
+# placeholder for reset, cant train on local machine
 class ResnetBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
@@ -26,7 +30,7 @@ class Encoder(nn.Module):
         super().__init__()
         self.conv_in = nn.Conv2d(in_channels, hidden_channels, kernel_size=3, stride=1, padding=1)
         
-        # Downsampling blocks with residual connections
+
         self.down = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(hidden_channels, hidden_channels*2, 4, 2, 1),
@@ -53,7 +57,7 @@ class Decoder(nn.Module):
         super().__init__()
         current_channels = hidden_channels * 4
         
-        # Upsampling blocks with residual connections
+       
         self.up = nn.ModuleList([
             nn.Sequential(
                 *[ResnetBlock(current_channels) for _ in range(n_res_blocks)],
@@ -71,7 +75,7 @@ class Decoder(nn.Module):
             )
         ])
         
-        # Final convolution layer (separate from activation)
+        
         self.final_conv = nn.Conv2d(hidden_channels, out_channels, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
@@ -101,7 +105,7 @@ class VQGAN(nn.Module):
         self.quant_conv = nn.Conv2d(hidden_channels*4, embed_dim, 1)
         self.post_quant_conv = nn.Conv2d(embed_dim, hidden_channels*4, 1)
 
-        # Initialize discriminator and loss
+
         self.discriminator = NLayerDiscriminator(input_nc=3).apply(weights_init)
         self.loss = VQLPIPSWithDiscriminator(
             disc_start= 500,
@@ -130,7 +134,7 @@ class VQGAN(nn.Module):
             return dec, codebook_loss, indices
             
         if optimizer_idx == 0:
-            # Generator loss
+          
             if global_step >= self.loss.disc_start:
                 logits_fake = self.discriminator(dec)
                 g_loss = -torch.mean(logits_fake)
@@ -150,9 +154,9 @@ class VQGAN(nn.Module):
             return loss, log_dict
                     
         if optimizer_idx == 1:
-            # Discriminator loss
+            
             if global_step < self.loss.disc_start:
-                return None, None  # Indicate that discriminator loss is inactive
+                return None, None # No discriminator training before disc_start steps
             else:
                 logits_real = self.discriminator(x.detach())
                 logits_fake = self.discriminator(dec.detach())

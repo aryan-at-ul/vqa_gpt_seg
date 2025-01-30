@@ -24,7 +24,6 @@ class ISICDataset(Dataset):
         image = np.array(Image.open(image_path).convert("RGB"))
         mask = np.array(Image.open(mask_path).convert("L"), dtype=np.float32)
 
-        # Normalize mask to [0, 1]
         mask = mask / 255.0
 
         if self.transform:
@@ -32,7 +31,7 @@ class ISICDataset(Dataset):
             image = transformed["image"]
             mask = transformed["mask"]
 
-        # Convert mask to long tensor for CrossEntropyLoss
+
         mask = (mask > 0.5).long()
 
         return image, mask
@@ -75,12 +74,10 @@ def create_dataloaders(
     num_workers=4,
     image_size=224
 ):
-    """Create train and validation dataloaders"""
-    
-    # Get transforms
+
     train_transform, val_transform = get_transforms(image_size)
     
-    # Create datasets
+
     train_dataset = ISICDataset(
         data_dir=train_data_dir,
         mask_dir=train_mask_dir,
@@ -93,14 +90,14 @@ def create_dataloaders(
         transform=val_transform
     )
     
-    # Create dataloaders
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
-        drop_last=True  # Important for VQGAN training
+        drop_last=True  # Drop for vqa, accumulation part doesnt work if unequal batches 
     )
     
     val_loader = DataLoader(

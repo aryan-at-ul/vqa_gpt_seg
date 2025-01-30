@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+# copied as it is from tamming-transformers
+
 class VectorQuantizer(nn.Module):
     def __init__(self, n_e, e_dim, beta):
         super().__init__()

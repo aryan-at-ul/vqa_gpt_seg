@@ -4,6 +4,8 @@ import functools
 import torch
 import torch.nn as nn
 
+#source : tamming-trasnformers
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
